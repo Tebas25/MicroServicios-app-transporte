@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { RouteServiceModule } from '../src/route-service.module';
+import { RouteServiceModule } from '../src/report-service.module';
 
 describe('RouteServiceController (e2e)', () => {
   let app: INestApplication;

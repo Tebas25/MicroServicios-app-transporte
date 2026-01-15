@@ -1,4 +1,5 @@
 import { Controller, Post, Body, Patch, Param, Get } from '@nestjs/common';
+import { EventPattern, Payload, Ctx, RmqContext } from '@nestjs/microservices';
 import { RouteService } from '../services/route.service';
 import { CreateRouteDTO } from '../dto/create-route.dto';
 import { UpdateRouteDTO } from '../dto/update-route.dto';
@@ -26,4 +27,16 @@ export class RouteController {
     findOneRoute(@Param('id') id: string) {
         return this.routeService.findOneRoute(id);
     }
+
+    @EventPattern('new_incident')
+    async handleIncident(
+        @Payload() data: any,
+        @Ctx() context: RmqContext
+    ) {
+        await  this.routeService.finddelay(data.ruta_id, data.retrasoEstimado);
+        const channel = context.getChannelRef();
+        const originalMsg = context.getMessage();
+        channel.ack(originalMsg);
+    }
+
 }

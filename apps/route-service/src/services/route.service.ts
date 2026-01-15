@@ -63,4 +63,17 @@ export class RouteService {
             }
         };
     }
+
+    async finddelay(ruta_id: string, minutesDelay: number) {
+        const delay = Number(minutesDelay);
+        const resultado = await this.routeModel.updateOne(
+            { _id: ruta_id },
+            { $inc: { "paradas.$[].tiempo": delay } }, 
+            { timestamps: false } 
+        ).exec();
+
+        if (resultado.matchedCount === 0) {
+            throw new BadRequestException("Alerta recibida pero el Id no existe");
+        }
+    }
 }
