@@ -23,7 +23,7 @@ async function bootstrap() {
   }),
 
   await app.startAllMicroservices()
-  await app.listen(process.env.port ?? 3001);
+  await app.listen(process.env.PORT || 3001);
 
   console.log(`🚀 RouteService corriendo en puerto 3001 y escuchando RabbitMQ en la cola: "${rmqQueue}"`);
 

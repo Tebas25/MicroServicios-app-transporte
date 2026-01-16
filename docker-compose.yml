@@ -1,0 +1,97 @@
+version: '3.8'
+
+services:
+  # ----------------------------------------------------
+  # 1. RABBITMQ (LOCAL)
+  # ----------------------------------------------------
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq-local
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - transporte-network
+
+  # ----------------------------------------------------
+  # 2. AUTH SERVICE (Con JWT)
+  # ----------------------------------------------------
+  auth-service:
+    build:
+      context: .
+      dockerfile: apps/auth-service/Dockerfile
+    container_name: auth-service
+    ports:
+      - "3003:3003"
+    environment:
+
+      MONGO_URL: ${MONGO_URL}
+
+      JWT_SECRET: ${JWT_SECRET}
+      
+      # RABBITMQ
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      RABBITMQ_QUEUE: auth_queue
+      PORT: 3003
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - transporte-network
+
+  # ----------------------------------------------------
+  # 3. REPORT SERVICE
+  # ----------------------------------------------------
+  report-service:
+    build:
+      context: .
+      dockerfile: apps/report-service/Dockerfile
+    container_name: report-service
+    ports:
+      - "3002:3002"
+    environment:
+
+      MONGO_URL: ${MONGO_URL}
+      
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      RABBITMQ_QUEUE: accidents_queue
+      PORT: 3002
+      AUTH_SERVICE_URL: http://auth-service:3003
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - transporte-network
+
+  # ----------------------------------------------------
+  # 4. ROUTE SERVICE
+  # ----------------------------------------------------
+  route-service:
+    build:
+      context: .
+      dockerfile: apps/route-service/Dockerfile
+    container_name: route-service
+    ports:
+      - "3001:3001"
+    environment:
+    
+      MONGO_URL: ${MONGO_URL}
+      
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      RABBITMQ_QUEUE: accidents_queue
+      PORT: 3001
+      REPORT_SERVICE_URL: http://report-service:3002
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - transporte-network
+
+networks:
+  transporte-network:
+    driver: bridge
